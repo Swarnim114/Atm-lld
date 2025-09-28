@@ -21,3 +21,5 @@ An Automated Teller Machine (ATM) system that provides banking services includin
 - Multi-currency support
 - Transaction logging and receipt generation
 - Bank network integration capabilities
+
+![alt text](classDiagram.png)
