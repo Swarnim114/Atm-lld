@@ -1,0 +1,185 @@
+@startuml
+title ATM System - Improved UML Class Diagram (with Design Patterns)
+
+' ================== ATM Core ==================
+class ATM {
+    - string atmId
+    - string location
+    - double cashBalance
+    - ATMState currentState
+    - CardReader cardReader
+    - Keypad keypad
+    - Screen screen
+    - CashDispenser cashDispenser
+    - ReceiptPrinter receiptPrinter
+    - BankService bankService
+    + void setState(ATMState state)
+    + void insertCard(Card card)
+    + void authenticate(string pin)
+    + void selectTransaction(TransactionType type, double amount)
+    + void dispenseCash(double amount)
+    + void printReceipt(Transaction transaction)
+}
+
+class Card {
+    - string cardNumber
+    - string holderName
+    - Date expiryDate
+    - CardType cardType
+    - string bankId
+}
+
+class CardReader {
+    - CardReaderStatus status
+    + Card readCard()
+    + void ejectCard()
+    + void retainCard()
+}
+
+class Keypad {
+    + string getInput(string message)
+    + string getPin()
+}
+
+class Screen {
+    + void displayMessage(string message)
+    + void displayMenu()
+    + void showBalance(double balance)
+}
+
+class CashDispenser {
+    - double availableCash
+    - Map<Denomination, integer> cashInventory
+    + boolean dispenseCash(double amount)
+    + boolean canDispense(double amount)
+}
+
+class ReceiptPrinter {
+    - PrinterStatus status
+    + boolean printReceipt(Transaction transaction)
+    + boolean isPaperAvailable()
+}
+
+class BankService {
+    - string bankApiUrl
+    + boolean validatePin(string cardNumber, string pin)
+    + Account getAccountDetails(string cardNumber)
+    + boolean processTransaction(Transaction transaction)
+    + boolean changePin(string cardNumber, string oldPin, string newPin)
+}
+
+class Account {
+    - string accountNumber
+    - string holderName
+    - double balance
+    - string bankId
+    + boolean withdraw(double amount)
+    + double getBalance()
+}
+
+class Transaction {
+    - string transactionId
+    - TransactionType type
+    - double amount
+    - Date timestamp
+    - string cardNumber
+    - TransactionStatus status
+    + boolean process()
+}
+
+class User {
+    - string userId
+    - string name
+    - List<Card> cards
+}
+
+' ================== STATE PATTERN ==================
+abstract class ATMState {
+    + void insertCard(ATM atm, Card card)
+    + void authenticate(ATM atm, string pin)
+    + void selectTransaction(ATM atm, TransactionType type, double amount)
+    + void dispenseCash(ATM atm, double amount)
+    + void printReceipt(ATM atm, Transaction transaction)
+}
+
+class IdleState
+class ReadingCardState
+class AuthenticatingState
+class ProcessingState
+class DispensingState
+class PrintingState
+class ErrorState
+
+ATMState <|-- IdleState
+ATMState <|-- ReadingCardState
+ATMState <|-- AuthenticatingState
+ATMState <|-- ProcessingState
+ATMState <|-- DispensingState
+ATMState <|-- PrintingState
+ATMState <|-- ErrorState
+
+ATM --> ATMState : delegates behavior
+
+' ================== STRATEGY PATTERN ==================
+interface TransactionStrategy {
+    + boolean execute(ATM atm, Transaction transaction)
+}
+
+class BalanceInquiryStrategy
+class CashWithdrawalStrategy
+class PinChangeStrategy
+class MiniStatementStrategy
+
+TransactionStrategy <|.. BalanceInquiryStrategy
+TransactionStrategy <|.. CashWithdrawalStrategy
+TransactionStrategy <|.. PinChangeStrategy
+TransactionStrategy <|.. MiniStatementStrategy
+
+' ================== FACTORY PATTERN ==================
+class TransactionFactory {
+    + static Transaction createTransaction(TransactionType type, string cardNumber, double amount)
+}
+
+ATM --> TransactionFactory : uses
+TransactionFactory --> Transaction : creates
+Transaction --> TransactionStrategy : uses strategy
+
+' ================== ENUMS ==================
+enum TransactionType {
+    BALANCE_INQUIRY
+    CASH_WITHDRAWAL
+    PIN_CHANGE
+    MINI_STATEMENT
+}
+
+enum CardType {
+    DEBIT
+    CREDIT
+}
+
+enum Denomination {
+    HUNDRED
+    FIVE_HUNDRED
+    TWO_THOUSAND
+}
+
+' ================== RELATIONSHIPS ==================
+ATM "1" *-- "1" CardReader
+ATM "1" *-- "1" Keypad
+ATM "1" *-- "1" Screen
+ATM "1" *-- "1" CashDispenser
+ATM "1" *-- "1" ReceiptPrinter
+ATM "1" *-- "1" BankService
+
+Card "1" *-- "1" CardType
+BankService "1" *-- "*" Account
+Account "1" *-- "*" Transaction
+Transaction "1" *-- "1" TransactionType
+User "1" *-- "*" Card
+User "1" *-- "*" Account
+
+CardReader --> Card : reads
+CashDispenser --> Denomination : uses
+ReceiptPrinter --> Transaction : prints
+
+@enduml
